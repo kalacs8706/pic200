@@ -3,240 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pure Black & White Converter (200x200)</title>
+    <title>Dynamic Square Pixel Visualizer</title>
     <style>
         :root {
-            --bg-color: #f4f4f9;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --accent-color: #e67e22;
-            --border-color: #dddddd;
+            --bg-color: #121214;
+            --panel-color: #1a1a1e;
+            --accent-color: #4f46e5;
+            --text-color: #e4e4e7;
+            --border-color: #2d2d34;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
             margin: 0;
             padding: 20px;
-        }
-
-        .container {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
 
         h1 {
             font-size: 1.5rem;
             margin-bottom: 5px;
-            color: #222;
+            font-weight: 600;
         }
 
-        p.subtitle {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 25px;
-        }
-
-        .drop-zone {
-            border: 2px dashed var(--accent-color);
-            border-radius: 8px;
-            padding: 30px 20px;
-            cursor: pointer;
-            transition: background 0.3s;
+        p {
+            color: #a1a1aa;
+            margin-top: 0;
             margin-bottom: 20px;
+            font-size: 0.9rem;
         }
 
-        .drop-zone:hover {
-            background-color: rgba(230, 126, 34, 0.05);
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 440px;
         }
 
-        .drop-zone p {
-            margin: 0;
-            font-size: 0.95rem;
-            color: #666;
+        .panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        #fileInput {
-            display: none;
+        #file-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            background: #27272a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 0.9rem;
         }
 
-        .preview-container {
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #a1a1aa;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .canvas-container {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
-            margin-top: 20px;
         }
 
-        .image-box {
-            width: 200px;
-            height: 200px;
-            border: 1px solid var(--border-color);
-            background: #eee;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            border-radius: 4px;
+        canvas {
+            background-color: #000;
+            border: 1px solid #27272a;
+            max-width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
 
-        .image-box img {
+        .stats {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #a1a1aa;
             width: 100%;
-            height: 100%;
-            object-fit: cover; /* Squares it off cleanly without stretching */
-            image-rendering: pixelated; /* Keeps the pure pixels crisp */
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
         }
 
-        .btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 0.95rem;
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .error {
+            color: #ef4444;
+            background-color: #451a1a;
+            border: 1px solid #7f1d1d;
+            padding: 12px;
             border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            background-color: #d35400;
-        }
-
-        .hidden {
-            display: none !important;
+            font-size: 0.85rem;
+            display: none;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Binary B&W Converter</h1>
-    <p class="subtitle">Resizes to 200x200 and limits colors to strictly 0 or 255 brightness.</p>
-    
-    <div class="drop-zone" id="dropZone">
-        <p>Drag & drop an image here, or <strong>click to browse</strong></p>
-        <input type="file" id="fileInput" accept="image/*">
-    </div>
+    <h1>Square Pixel Visualizer</h1>
+    <p>Auto-crops data into a perfect square grid with adjustable threshold balance.</p>
 
-    <div id="resultContainer" class="preview-container hidden">
-        <h3>Converted Result (200x200)</h3>
-        <div class="image-box">
-            <img id="outputImage" alt="Processed output">
+    <div class="container">
+        <div class="panel">
+            <input type="file" id="file-input" accept=".txt">
+            
+            <div class="slider-container">
+                <div class="slider-label">
+                    <span>Black/White Cutoff (Threshold)</span>
+                    <span id="threshold-val">50%</span>
+                </div>
+                <input type="range" id="threshold-slider" min="0" max="100" value="50">
+            </div>
         </div>
-        <a id="downloadBtn" class="btn" download="binary-image.png">Download PNG</a>
+
+        <div id="error-message" class="error"></div>
+
+        <div class="canvas-container">
+            <canvas id="pixel-canvas" style="width: 400px; height: 400px;"></canvas>
+            
+            <div class="stats">
+                <div class="stats-row">
+                    <span id="stat-filename">No file loaded</span>
+                    <span id="stat-dimensions">Grid: 0 x 0</span>
+                </div>
+                <div class="stats-row">
+                    <span id="stat-count">Total items: 0</span>
+                    <span id="stat-cropped">Cropped: 0</span>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<canvas id="canvas" width="200" height="200" class="hidden"></canvas>
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const thresholdVal = document.getElementById('threshold-val');
+        const canvas = document.getElementById('pixel-canvas');
+        const ctx = canvas.getContext('2d');
+        const errorMessage = document.getElementById('error-message');
+        const statFilename = document.getElementById('stat-filename');
+        const statDimensions = document.getElementById('stat-dimensions');
+        const statCount = document.getElementById('stat-count');
+        const statCropped = document.getElementById('stat-cropped');
 
-<script>
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const resultContainer = document.getElementById('resultContainer');
-    const outputImage = document.getElementById('outputImage');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+        let parsedColors = [];
 
-    dropZone.addEventListener('click', () => fileInput.click());
+        // Set up an initial empty preview size
+        canvas.width = 200;
+        canvas.height = 200;
+        ctx.fillStyle = '#27272a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = '#d35400';
-    });
+        // Handle file loading
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                statFilename.textContent = file.name;
+                showError("");
 
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.style.borderColor = 'var(--accent-color)';
-    });
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const text = evt.target.result;
+                    // Split lines and trim spaces
+                    const rawLines = text.split(/\r?\n/);
+                    parsedColors = rawLines.map(line => line.trim().toLowerCase()).filter(line => line.length > 0);
+                    
+                    renderDynamicSquare();
+                };
+                reader.onerror = function() {
+                    showError("Could not read file structure.");
+                };
+                reader.readAsText(file);
+            }
+        });
 
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = 'var(--accent-color)';
-        if (e.dataTransfer.files.length > 0) {
-            processImage(e.dataTransfer.files[0]);
-        }
-    });
+        // Dynamic adjustment listener
+        thresholdSlider.addEventListener('input', (e) => {
+            thresholdVal.textContent = `${e.target.value}%`;
+            if (parsedColors.length > 0) {
+                renderDynamicSquare();
+            }
+        });
 
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            processImage(e.target.files[0]);
-        }
-    });
+        function renderDynamicSquare() {
+            const totalItems = parsedColors.length;
+            if (totalItems === 0) return;
 
-    function processImage(file) {
-        if (!file.type.startsWith('image/')) {
-            alert('Please upload an image file.');
-            return;
-        }
+            // Find the largest perfect square dimension (e.g., sqrt of 40100 -> 200)
+            const sideSize = Math.floor(Math.sqrt(totalItems));
+            const squareTotal = sideSize * sideSize;
 
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                ctx.clearRect(0, 0, 200, 200);
-                
-                // Square center crop logic
-                let srcX = 0, srcY = 0, srcW = img.width, srcH = img.height;
-                if (img.width / img.height > 1) {
-                    srcW = img.height;
-                    srcX = (img.width - img.height) / 2;
+            statDimensions.textContent = `Grid: ${sideSize} x ${sideSize}`;
+            statCount.textContent = `Total items: ${totalItems.toLocaleString()}`;
+            statCropped.textContent = `Rendered: ${squareTotal.toLocaleString()}`;
+
+            if (totalItems !== squareTotal) {
+                showError(`Notice: Cropped ${ (totalItems - squareTotal).toLocaleString() } leftover line(s) to maintain a perfect ${sideSize}x${sideSize} square view.`);
+            } else {
+                showError("");
+            }
+
+            // Update canvas base layout grid 1:1
+            canvas.width = sideSize;
+            canvas.height = sideSize;
+
+            const imgData = ctx.createImageData(sideSize, sideSize);
+            const data = imgData.data;
+            const threshold = parseInt(thresholdSlider.value) / 100;
+
+            // Simple parser logic that maps value structures or defaults to black/white balance
+            for (let i = 0; i < squareTotal; i++) {
+                const colorToken = parsedColors[i];
+                let isWhite = true;
+
+                if (colorToken === 'black') {
+                    isWhite = false;
+                } else if (colorToken === 'white') {
+                    isWhite = true;
                 } else {
-                    srcH = img.width;
-                    srcY = (img.height - img.width) / 2;
+                    // Fallback calculation rule for numerical or random color text assets:
+                    // If a sliding percentage rules the value balance:
+                    isWhite = (i / squareTotal) >= threshold;
                 }
 
-                // Render into 200x200 canvas space
-                ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, 200, 200);
+                const pixelColor = isWhite ? 255 : 0;
+                const idx = i * 4;
+                data[idx]     = pixelColor; // R
+                data[idx + 1] = pixelColor; // G
+                data[idx + 2] = pixelColor; // B
+                data[idx + 3] = 255;        // A
+            }
 
-                const imageData = ctx.getImageData(0, 0, 200, 200);
-                const data = imageData.data;
+            ctx.putImageData(imgData, 0, 0);
+        }
 
-                // Threshold value (128 is mid-way between 0 and 255)
-                const threshold = 127.5; 
-
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
-                    
-                    // Calculate perceived brightness
-                    const v = (0.2126 * r + 0.7152 * g + 0.0722 * b);
-                    
-                    // Force binary state: strictly 0 (black) or 255 (white)
-                    const binaryColor = v >= threshold ? 255 : 0;
-                    
-                    data[i]     = binaryColor;
-                    data[i + 1] = binaryColor;
-                    data[i + 2] = binaryColor;
-                    // data[i+3] is alpha channel, kept at original transparency/solid
-                }
-                
-                ctx.putImageData(imageData, 0, 0);
-
-                // Convert canvas to downloadable format
-                const dataUrl = canvas.toDataURL('image/png');
-                outputImage.src = dataUrl;
-                downloadBtn.href = dataUrl;
-                
-                resultContainer.classList.remove('hidden');
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-</script>
-
+        function showError(msg) {
+            if (msg) {
+                errorMessage.textContent = msg;
+                errorMessage.style.display = 'block';
+            } else {
+                errorMessage.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
