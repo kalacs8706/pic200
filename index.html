@@ -3,286 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Square Pixel Visualizer</title>
+    <title>Adjustable Binary B&W Square Converter</title>
     <style>
         :root {
-            --bg-color: #121214;
-            --panel-color: #1a1a1e;
-            --accent-color: #4f46e5;
-            --text-color: #e4e4e7;
-            --border-color: #2d2d34;
+            --bg-color: #f4f4f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --accent-color: #2c3e50;
+            --border-color: #dddddd;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            margin: 0;
-            padding: 20px;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
             min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
         }
 
         h1 {
             font-size: 1.5rem;
             margin-bottom: 5px;
-            font-weight: 600;
+            color: #222;
         }
 
-        p {
-            color: #a1a1aa;
-            margin-top: 0;
-            margin-bottom: 20px;
+        p.subtitle {
+            color: #666;
             font-size: 0.9rem;
+            margin-bottom: 25px;
         }
 
-        .container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%;
-            max-width: 440px;
-        }
-
-        .panel {
-            background-color: var(--panel-color);
-            border: 1px solid var(--border-color);
+        .drop-zone {
+            border: 2px dashed var(--accent-color);
             border-radius: 8px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        #file-input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px;
-            background: #27272a;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-color);
+            padding: 30px 20px;
             cursor: pointer;
-            font-size: 0.9rem;
+            transition: background 0.3s;
+            margin-bottom: 20px;
         }
 
-        .slider-container {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        .drop-zone:hover {
+            background-color: rgba(44, 62, 80, 0.05);
+        }
+
+        .drop-zone p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #666;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .controls {
+            margin: 20px 0;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
         .slider-label {
             display: flex;
             justify-content: space-between;
-            font-size: 0.85rem;
-            color: #a1a1aa;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
         }
 
         input[type="range"] {
             width: 100%;
-            accent-color: var(--accent-color);
+            margin: 0;
             cursor: pointer;
         }
 
-        .canvas-container {
-            background-color: var(--panel-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
+        .preview-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
+            margin-top: 20px;
         }
 
-        canvas {
-            background-color: #000;
-            border: 1px solid #27272a;
+        .image-box {
             max-width: 100%;
-            height: auto;
+            max-height: 400px;
+            border: 1px solid var(--border-color);
+            background: #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .image-box img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
             image-rendering: pixelated;
-            image-rendering: crisp-edges;
         }
 
-        .stats {
-            font-family: monospace;
-            font-size: 0.85rem;
-            color: #a1a1aa;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 12px;
-        }
-
-        .stats-row {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .error {
-            color: #ef4444;
-            background-color: #451a1a;
-            border: 1px solid #7f1d1d;
-            padding: 12px;
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.95rem;
             border-radius: 6px;
-            font-size: 0.85rem;
-            display: none;
-            line-height: 1.4;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #1a252f;
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
 
-    <h1>Square Pixel Visualizer</h1>
-    <p>Auto-crops data into a perfect square grid with adjustable threshold balance.</p>
-
-    <div class="container">
-        <div class="panel">
-            <input type="file" id="file-input" accept=".txt">
-            
-            <div class="slider-container">
-                <div class="slider-label">
-                    <span>Black/White Cutoff (Threshold)</span>
-                    <span id="threshold-val">50%</span>
-                </div>
-                <input type="range" id="threshold-slider" min="0" max="100" value="50">
-            </div>
-        </div>
-
-        <div id="error-message" class="error"></div>
-
-        <div class="canvas-container">
-            <canvas id="pixel-canvas" style="width: 400px; height: 400px;"></canvas>
-            
-            <div class="stats">
-                <div class="stats-row">
-                    <span id="stat-filename">No file loaded</span>
-                    <span id="stat-dimensions">Grid: 0 x 0</span>
-                </div>
-                <div class="stats-row">
-                    <span id="stat-count">Total items: 0</span>
-                    <span id="stat-cropped">Cropped: 0</span>
-                </div>
-            </div>
-        </div>
+<div class="container">
+    <h1>Adjustable Pure B&W Square Crop</h1>
+    <p class="subtitle">Crops original image to a center square and applies a variable threshold.</p>
+    
+    <div class="drop-zone" id="dropZone">
+        <p>Drag & drop an image here, or <strong>click to browse</strong></p>
+        <input type="file" id="fileInput" accept="image/*">
     </div>
 
-    <script>
-        const fileInput = document.getElementById('file-input');
-        const thresholdSlider = document.getElementById('threshold-slider');
-        const thresholdVal = document.getElementById('threshold-val');
-        const canvas = document.getElementById('pixel-canvas');
-        const ctx = canvas.getContext('2d');
-        const errorMessage = document.getElementById('error-message');
-        const statFilename = document.getElementById('stat-filename');
-        const statDimensions = document.getElementById('stat-dimensions');
-        const statCount = document.getElementById('stat-count');
-        const statCropped = document.getElementById('stat-cropped');
+    <div id="resultContainer" class="preview-container hidden">
+        <div class="controls">
+            <div class="slider-label">
+                <span>Threshold (Black vs White)</span>
+                <span id="thresholdValue">50%</span>
+            </div>
+            <input type="range" id="thresholdSlider" min="0" max="255" value="127">
+        </div>
 
-        let parsedColors = [];
+        <h3>Resulting Square Image</h3>
+        <div class="image-box">
+            <img id="outputImage" alt="Processed output">
+        </div>
+        <a id="downloadBtn" class="btn" download="binary-square.png">Download PNG</a>
+    </div>
+</div>
 
-        // Set up an initial empty preview size
-        canvas.width = 200;
-        canvas.height = 200;
-        ctx.fillStyle = '#27272a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+<canvas id="canvas" class="hidden"></canvas>
 
-        // Handle file loading
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                const file = e.target.files[0];
-                statFilename.textContent = file.name;
-                showError("");
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const resultContainer = document.getElementById('resultContainer');
+    const outputImage = document.getElementById('outputImage');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const thresholdSlider = document.getElementById('thresholdSlider');
+    const thresholdValue = document.getElementById('thresholdValue');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    const text = evt.target.result;
-                    // Split lines and trim spaces
-                    const rawLines = text.split(/\r?\n/);
-                    parsedColors = rawLines.map(line => line.trim().toLowerCase()).filter(line => line.length > 0);
-                    
-                    renderDynamicSquare();
-                };
-                reader.onerror = function() {
-                    showError("Could not read file structure.");
-                };
-                reader.readAsText(file);
-            }
-        });
+    let originalImg = null;
 
-        // Dynamic adjustment listener
-        thresholdSlider.addEventListener('input', (e) => {
-            thresholdVal.textContent = `${e.target.value}%`;
-            if (parsedColors.length > 0) {
-                renderDynamicSquare();
-            }
-        });
+    dropZone.addEventListener('click', () => fileInput.click());
 
-        function renderDynamicSquare() {
-            const totalItems = parsedColors.length;
-            if (totalItems === 0) return;
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#1a252f';
+    });
 
-            // Find the largest perfect square dimension (e.g., sqrt of 40100 -> 200)
-            const sideSize = Math.floor(Math.sqrt(totalItems));
-            const squareTotal = sideSize * sideSize;
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'var(--accent-color)';
+    });
 
-            statDimensions.textContent = `Grid: ${sideSize} x ${sideSize}`;
-            statCount.textContent = `Total items: ${totalItems.toLocaleString()}`;
-            statCropped.textContent = `Rendered: ${squareTotal.toLocaleString()}`;
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--accent-color)';
+        if (e.dataTransfer.files.length > 0) {
+            loadImage(e.dataTransfer.files[0]);
+        }
+    });
 
-            if (totalItems !== squareTotal) {
-                showError(`Notice: Cropped ${ (totalItems - squareTotal).toLocaleString() } leftover line(s) to maintain a perfect ${sideSize}x${sideSize} square view.`);
-            } else {
-                showError("");
-            }
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            loadImage(e.target.files[0]);
+        }
+    });
 
-            // Update canvas base layout grid 1:1
-            canvas.width = sideSize;
-            canvas.height = sideSize;
+    thresholdSlider.addEventListener('input', (e) => {
+        const val = e.target.value;
+        // Update percentage text
+        thresholdValue.textContent = Math.round((val / 255) * 100) + '%';
+        if (originalImg) {
+            applyBinaryThreshold(parseInt(val));
+        }
+    });
 
-            const imgData = ctx.createImageData(sideSize, sideSize);
-            const data = imgData.data;
-            const threshold = parseInt(thresholdSlider.value) / 100;
-
-            // Simple parser logic that maps value structures or defaults to black/white balance
-            for (let i = 0; i < squareTotal; i++) {
-                const colorToken = parsedColors[i];
-                let isWhite = true;
-
-                if (colorToken === 'black') {
-                    isWhite = false;
-                } else if (colorToken === 'white') {
-                    isWhite = true;
-                } else {
-                    // Fallback calculation rule for numerical or random color text assets:
-                    // If a sliding percentage rules the value balance:
-                    isWhite = (i / squareTotal) >= threshold;
-                }
-
-                const pixelColor = isWhite ? 255 : 0;
-                const idx = i * 4;
-                data[idx]     = pixelColor; // R
-                data[idx + 1] = pixelColor; // G
-                data[idx + 2] = pixelColor; // B
-                data[idx + 3] = 255;        // A
-            }
-
-            ctx.putImageData(imgData, 0, 0);
+    function loadImage(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('Please upload an image file.');
+            return;
         }
 
-        function showError(msg) {
-            if (msg) {
-                errorMessage.textContent = msg;
-                errorMessage.style.display = 'block';
-            } else {
-                errorMessage.style.display = 'none';
-            }
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            originalImg = new Image();
+            originalImg.onload = function() {
+                // Determine the square size based on the shortest dimension (no downscaling)
+                const size = Math.min(originalImg.width, originalImg.height);
+                canvas.width = size;
+                canvas.height = size;
+
+                // Apply threshold using the slider's current value
+                applyBinaryThreshold(parseInt(thresholdSlider.value));
+                resultContainer.classList.remove('hidden');
+            };
+            originalImg.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function applyBinaryThreshold(threshold) {
+        const size = canvas.width;
+        ctx.clearRect(0, 0, size, size);
+        
+        // Calculate centered cropping coordinates from original image
+        let srcX = 0;
+        let srcY = 0;
+        if (originalImg.width > originalImg.height) {
+            srcX = (originalImg.width - originalImg.height) / 2;
+        } else {
+            srcY = (originalImg.height - originalImg.width) / 2;
         }
-    </script>
+
+        // Draw original cropped section onto canvas at 1:1 scale
+        ctx.drawImage(originalImg, srcX, srcY, size, size, 0, 0, size, size);
+
+        // Fetch image data to manipulate pixels
+        const imageData = ctx.getImageData(0, 0, size, size);
+        const data = imageData.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // Standard perceived brightness formula
+            const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            
+            // Evaluate against the user's custom threshold
+            const binaryColor = luminance >= threshold ? 255 : 0;
+            
+            data[i]     = binaryColor; // R
+            data[i + 1] = binaryColor; // G
+            data[i + 2] = binaryColor; // B
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+
+        // Render preview and update download link
+        const dataUrl = canvas.toDataURL('image/png');
+        outputImage.src = dataUrl;
+        downloadBtn.href = dataUrl;
+    }
+</script>
+
 </body>
 </html>
