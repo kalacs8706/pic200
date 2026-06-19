@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adjustable Binary B&W Square Converter</title>
+    <title>Adjustable Binary RGB & B&W Square Converter</title>
     <style>
         :root {
             --bg-color: #f4f4f9;
@@ -76,14 +76,36 @@
             padding: 15px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: left;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #444;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            background: white;
+            cursor: pointer;
         }
 
         .slider-label {
             display: flex;
             justify-content: space-between;
-            font-weight: bold;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
         }
 
         input[type="range"] {
@@ -144,8 +166,8 @@
 <body>
 
 <div class="container">
-    <h1>Adjustable Pure B&W Square Crop</h1>
-    <p class="subtitle">Crops original image to a center square and applies a variable threshold.</p>
+    <h1>Adjustable Binary RGB & Square Crop</h1>
+    <p class="subtitle">Crops images to a 1:1 square. Restricts multi-color mode strictly to R, G, B, Black, and White.</p>
     
     <div class="drop-zone" id="dropZone">
         <p>Drag & drop an image here, or <strong>click to browse</strong></p>
@@ -154,18 +176,31 @@
 
     <div id="resultContainer" class="preview-container hidden">
         <div class="controls">
-            <div class="slider-label">
-                <span>Threshold (Black vs White)</span>
-                <span id="thresholdValue">50%</span>
+            <div class="control-group">
+                <label for="modeSelect">Processing Mode</label>
+                <select id="modeSelect">
+                    <option value="luminance">Luminance (Classic B&W)</option>
+                    <option value="pureRGB">Pure RGB (Strictly Red, Green, Blue, Black, White)</option>
+                    <option value="red">Isolate Red Channel (B&W Output)</option>
+                    <option value="green">Isolate Green Channel (B&W Output)</option>
+                    <option value="blue">Isolate Blue Channel (B&W Output)</option>
+                </select>
             </div>
-            <input type="range" id="thresholdSlider" min="0" max="255" value="127">
+
+            <div class="control-group">
+                <div class="slider-label">
+                    <label for="thresholdSlider">Threshold Balance</label>
+                    <span id="thresholdValue" style="font-weight: bold; font-size: 0.9rem;">50%</span>
+                </div>
+                <input type="range" id="thresholdSlider" min="0" max="255" value="127">
+            </div>
         </div>
 
         <h3>Resulting Square Image</h3>
         <div class="image-box">
             <img id="outputImage" alt="Processed output">
         </div>
-        <a id="downloadBtn" class="btn" download="binary-square.png">Download PNG</a>
+        <a id="downloadBtn" class="btn" download="binary-processed-square.png">Download PNG</a>
     </div>
 </div>
 
@@ -179,6 +214,7 @@
     const downloadBtn = document.getElementById('downloadBtn');
     const thresholdSlider = document.getElementById('thresholdSlider');
     const thresholdValue = document.getElementById('thresholdValue');
+    const modeSelect = document.getElementById('modeSelect');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -211,11 +247,12 @@
 
     thresholdSlider.addEventListener('input', (e) => {
         const val = e.target.value;
-        // Update percentage text
         thresholdValue.textContent = Math.round((val / 255) * 100) + '%';
-        if (originalImg) {
-            applyBinaryThreshold(parseInt(val));
-        }
+        if (originalImg) processImage();
+    });
+
+    modeSelect.addEventListener('change', () => {
+        if (originalImg) processImage();
     });
 
     function loadImage(file) {
@@ -228,13 +265,11 @@
         reader.onload = function(event) {
             originalImg = new Image();
             originalImg.onload = function() {
-                // Determine the square size based on the shortest dimension (no downscaling)
                 const size = Math.min(originalImg.width, originalImg.height);
                 canvas.width = size;
                 canvas.height = size;
 
-                // Apply threshold using the slider's current value
-                applyBinaryThreshold(parseInt(thresholdSlider.value));
+                processImage();
                 resultContainer.classList.remove('hidden');
             };
             originalImg.src = event.target.result;
@@ -242,23 +277,22 @@
         reader.readAsDataURL(file);
     }
 
-    function applyBinaryThreshold(threshold) {
+    function processImage() {
         const size = canvas.width;
+        const threshold = parseInt(thresholdSlider.value);
+        const mode = modeSelect.value;
+
         ctx.clearRect(0, 0, size, size);
         
-        // Calculate centered cropping coordinates from original image
-        let srcX = 0;
-        let srcY = 0;
+        let srcX = 0, srcY = 0;
         if (originalImg.width > originalImg.height) {
             srcX = (originalImg.width - originalImg.height) / 2;
         } else {
             srcY = (originalImg.height - originalImg.width) / 2;
         }
 
-        // Draw original cropped section onto canvas at 1:1 scale
         ctx.drawImage(originalImg, srcX, srcY, size, size, 0, 0, size, size);
 
-        // Fetch image data to manipulate pixels
         const imageData = ctx.getImageData(0, 0, size, size);
         const data = imageData.data;
 
@@ -267,20 +301,58 @@
             const g = data[i + 1];
             const b = data[i + 2];
             
-            // Standard perceived brightness formula
-            const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            
-            // Evaluate against the user's custom threshold
-            const binaryColor = luminance >= threshold ? 255 : 0;
-            
-            data[i]     = binaryColor; // R
-            data[i + 1] = binaryColor; // G
-            data[i + 2] = binaryColor; // B
+            let outR = 0, outG = 0, outB = 0;
+
+            switch (mode) {
+                case 'luminance':
+                    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                    const binaryLum = lum >= threshold ? 255 : 0;
+                    outR = outG = outB = binaryLum;
+                    break;
+
+                case 'pureRGB':
+                    const maxChannel = Math.max(r, g, b);
+                    const minChannel = Math.min(r, g, b);
+
+                    if (minChannel >= threshold) {
+                        // All channels crossed the line -> Force White
+                        outR = outG = outB = 255;
+                    } else if (maxChannel < threshold) {
+                        // No channels crossed the line -> Force Black
+                        outR = outG = outB = 0;
+                    } else {
+                        // Only some crossed. Isolate the absolute strongest channel 
+                        // to prevent secondary color mixing (Yellow, Cyan, Magenta)
+                        if (r >= g && r >= b) {
+                            outR = 255; outG = 0; outB = 0; // Pure Red
+                        } else if (g >= r && g >= b) {
+                            outR = 0; outG = 255; outB = 0; // Pure Green
+                        } else {
+                            outR = 0; outG = 0; outB = 255; // Pure Blue
+                        }
+                    }
+                    break;
+                    
+                case 'red':
+                    outR = outG = outB = (r >= threshold ? 255 : 0);
+                    break;
+                    
+                case 'green':
+                    outR = outG = outB = (g >= threshold ? 255 : 0);
+                    break;
+                    
+                case 'blue':
+                    outR = outG = outB = (b >= threshold ? 255 : 0);
+                    break;
+            }
+
+            data[i]     = outR;
+            data[i + 1] = outG;
+            data[i + 2] = outB;
         }
         
         ctx.putImageData(imageData, 0, 0);
 
-        // Render preview and update download link
         const dataUrl = canvas.toDataURL('image/png');
         outputImage.src = dataUrl;
         downloadBtn.href = dataUrl;
