@@ -167,7 +167,7 @@
 
 <div class="container">
     <h1>Adjustable Binary RGB & Square Crop</h1>
-    <p class="subtitle">Crops images to a 1:1 square. Restricts multi-color mode strictly to R, G, B, Black, and White.</p>
+    <p class="subtitle">Crops images to a 1:1 square with adjustable RGB channel threshold processing.</p>
     
     <div class="drop-zone" id="dropZone">
         <p>Drag & drop an image here, or <strong>click to browse</strong></p>
@@ -180,10 +180,10 @@
                 <label for="modeSelect">Processing Mode</label>
                 <select id="modeSelect">
                     <option value="luminance">Luminance (Classic B&W)</option>
-                    <option value="pureRGB">Pure RGB (Strictly Red, Green, Blue, Black, White)</option>
                     <option value="red">Isolate Red Channel (B&W Output)</option>
                     <option value="green">Isolate Green Channel (B&W Output)</option>
                     <option value="blue">Isolate Blue Channel (B&W Output)</option>
+                    <option value="rgbSplit">RGB Split (8-Color Binary Pop-Art)</option>
                 </select>
             </div>
 
@@ -245,12 +245,14 @@
         }
     });
 
+    // Update whenever threshold slider moves
     thresholdSlider.addEventListener('input', (e) => {
         const val = e.target.value;
         thresholdValue.textContent = Math.round((val / 255) * 100) + '%';
         if (originalImg) processImage();
     });
 
+    // Update instantly when dropdown changes
     modeSelect.addEventListener('change', () => {
         if (originalImg) processImage();
     });
@@ -284,6 +286,7 @@
 
         ctx.clearRect(0, 0, size, size);
         
+        // Dynamic center cropping parameters
         let srcX = 0, srcY = 0;
         if (originalImg.width > originalImg.height) {
             srcX = (originalImg.width - originalImg.height) / 2;
@@ -291,6 +294,7 @@
             srcY = (originalImg.height - originalImg.width) / 2;
         }
 
+        // Draw source 1:1 onto canvas size
         ctx.drawImage(originalImg, srcX, srcY, size, size, 0, 0, size, size);
 
         const imageData = ctx.getImageData(0, 0, size, size);
@@ -309,40 +313,27 @@
                     const binaryLum = lum >= threshold ? 255 : 0;
                     outR = outG = outB = binaryLum;
                     break;
-
-                case 'pureRGB':
-                    const maxChannel = Math.max(r, g, b);
-                    const minChannel = Math.min(r, g, b);
-
-                    if (minChannel >= threshold) {
-                        // All channels crossed the line -> Force White
-                        outR = outG = outB = 255;
-                    } else if (maxChannel < threshold) {
-                        // No channels crossed the line -> Force Black
-                        outR = outG = outB = 0;
-                    } else {
-                        // Only some crossed. Isolate the absolute strongest channel 
-                        // to prevent secondary color mixing (Yellow, Cyan, Magenta)
-                        if (r >= g && r >= b) {
-                            outR = 255; outG = 0; outB = 0; // Pure Red
-                        } else if (g >= r && g >= b) {
-                            outR = 0; outG = 255; outB = 0; // Pure Green
-                        } else {
-                            outR = 0; outG = 0; outB = 255; // Pure Blue
-                        }
-                    }
-                    break;
                     
                 case 'red':
-                    outR = outG = outB = (r >= threshold ? 255 : 0);
+                    const binaryR = r >= threshold ? 255 : 0;
+                    outR = outG = outB = binaryR;
                     break;
                     
                 case 'green':
-                    outR = outG = outB = (g >= threshold ? 255 : 0);
+                    const binaryG = g >= threshold ? 255 : 0;
+                    outR = outG = outB = binaryG;
                     break;
                     
                 case 'blue':
-                    outR = outG = outB = (b >= threshold ? 255 : 0);
+                    const binaryB = b >= threshold ? 255 : 0;
+                    outR = outG = outB = binaryB;
+                    break;
+                    
+                case 'rgbSplit':
+                    // Every color channel snaps to either 0 or 255 on its own
+                    outR = r >= threshold ? 255 : 0;
+                    outG = g >= threshold ? 255 : 0;
+                    outB = b >= threshold ? 255 : 0;
                     break;
             }
 
@@ -353,6 +344,7 @@
         
         ctx.putImageData(imageData, 0, 0);
 
+        // Export data to view/download
         const dataUrl = canvas.toDataURL('image/png');
         outputImage.src = dataUrl;
         downloadBtn.href = dataUrl;
